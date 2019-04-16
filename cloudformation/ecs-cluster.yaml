@@ -99,6 +99,7 @@ Mappings:
       "default": "sg-e1875c99"
       "resources": "sg-15be656d"
       "private": "sg-98ba61e0"
+      "web": "sg-79ba6101"
   SubnetMap:
     Public:
       "a": "subnet-cbbc0d82"
@@ -130,6 +131,7 @@ Resources:
       SecurityGroups:
         - !FindInMap [SecurityGroupMap, Ids, default]
         - !FindInMap [SecurityGroupMap, Ids, resources]
+        - !FindInMap [SecurityGroupMap, Ids, web]
       BlockDeviceMappings:
         - DeviceName: "/dev/xvda"
           Ebs:
