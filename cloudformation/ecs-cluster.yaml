@@ -1,0 +1,210 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  ECS cluster for Rankings
+  Template updated: 15.4.2019
+Parameters:
+  EcsAmiId:
+    Type: String
+    Description: |
+      Specifies the AMI ID for container instances.
+      amzn-ami-2018.03.p-amazon-ecs-optimized
+      eu-west-1: ami-0f85d8192f90863dc
+    AllowedValues:
+      - 'ami-0f85d8192f90863dc'
+  EcsInstanceType:
+    Type: CommaDelimitedList
+    Description: >
+      Specifies the EC2 instance type for your container instances.
+      Defaults to t3.medium
+    Default: t3.medium
+    AllowedValues:
+      - t3.small    #$0.0228 per Hour
+      - t3.medium   #$0.0456 per Hour
+      - t3.large    #$0.0912 per Hour
+      - r5.large    #$0.107 per Hour
+  SubnetType:
+    Type: String
+    Description: Select type of subnet to deploy to
+    Default: Private
+    AllowedValues:
+      - Private
+      - Public
+  KeyName:
+    Type: String
+    Description: >
+      Optional - Specifies the name of an existing Amazon EC2 key pair
+      to enable SSH access to the EC2 instances in your cluster.
+    Default: team-cms-ec2-ft-tech-editorial-prod
+  VpcId:
+    Type: String
+    Description: >
+      Optional - Specifies the ID of an existing VPC in which to launch
+      your container instances. If you specify a VPC ID, you must specify a list of
+      existing subnets in that VPC. If you do not specify a VPC ID, a new VPC is created
+      with atleast 1 subnet.
+    Default: vpc-729f2815
+    AllowedPattern: "^(?:vpc-[0-9a-f]{8}|)$"
+    ConstraintDescription: >
+      VPC Id must begin with 'vpc-' or leave blank to have a
+      new VPC created
+  Sudo:
+    Description: Sudo Group to be applied by default
+    Type: String
+    Default: eng
+  AsgMaxSize:
+    Type: Number
+    Description: >
+      Specifies the maximum number of instances to scale up in cluster.
+      Defaults to 6.
+    Default: '6'
+  AsgDesiredSize:
+    Type: Number
+    Description: >
+      Specifies the number of instances to launch and register to the cluster.
+      Defaults to 3.
+    Default: '3'
+  IamRoleInstanceProfile:
+    Type: String
+    Description: >
+      Specifies the Name or the Amazon Resource Name (ARN) of the instance
+      profile associated with the IAM role for the instance
+    Default: arn:aws:iam::307921801440:instance-profile/aws-composer-custom-ecs-global-FTApplicationRoleForECSInstanceRole-ECSInstanceProfile-1Q7D43KYQQN1A
+  TagDescription:
+    Description: Tag detail for the Description
+    Type: String
+    Default: ECS Cluster for Rankings
+  TagEnvironment:
+    Description: Tag detail for the Environment
+    Type: String
+    Default: int
+    AllowedValues:
+      - 'd'
+      - 't'
+      - 'p'
+      - 'int'
+  TagTeamDL:
+    Description: Tag detail for the TeamDL
+    ConstraintDescription: There must be a valid email address for the TeamDL Topic
+    Type: String
+    AllowedPattern: ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$
+    Default: rankings@ft.com
+  TagSystemCode:
+      Description: SystemCode
+      Type: String
+      Default: rankings-web
+
+Mappings:
+  SecurityGroupMap:
+    Ids:
+      "default": "sg-e1875c99"
+      "resources": "sg-15be656d"
+      "private": "sg-98ba61e0"
+  SubnetMap:
+    Public:
+      "a": "subnet-cbbc0d82"
+      "b": "subnet-3f3fcb64"
+      "c": "subnet-a467cfc3"
+    Private:
+      "a": "subnet-48bd0c01"
+      "b": "subnet-0839cd53"
+      "c": "subnet-e378d084"
+  PublicIPMap:
+    Public:
+      "bool": true
+    Private:
+      "bool": false
+
+Resources:
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub "${AWS::StackName}"
+  EcsInstanceLc:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: !Ref EcsAmiId
+      InstanceType: !Select [ 0, !Ref EcsInstanceType ]
+      AssociatePublicIpAddress: !FindInMap [PublicIPMap, !Ref SubnetType, bool]
+      IamInstanceProfile: !Ref IamRoleInstanceProfile
+      KeyName: !Ref KeyName
+      SecurityGroups:
+        - !FindInMap [SecurityGroupMap, Ids, default]
+        - !FindInMap [SecurityGroupMap, Ids, resources]
+      BlockDeviceMappings:
+        - DeviceName: "/dev/xvda"
+          Ebs:
+            VolumeType: "gp2"
+            DeleteOnTermination: "true"
+            VolumeSize: "10"
+      UserData:
+        Fn::Base64: !Sub |
+         #!/bin/bash
+         echo ECS_CLUSTER=${AWS::StackName} >> /etc/ecs/ecs.config
+         export PATH=/usr/local/bin:$PATH
+         yum -y install jq nfs-utils autofs tcpdump cifs-utils lsof python27-pip rsync
+         pip install --upgrade awscli credstash
+         aws configure set default.region ${AWS::Region}
+         # HACK: Install package that provides setfacl
+         yum -y install acl nmap-ncat telnet mysql
+         # Get bootstrap.sh
+         aws s3 cp s3://ft-ce-repository/amazon-ftbase/releases/bootstrap.sh .
+         # HACK: get ansible 2.6 due to ft-base not happy with 2.7+
+         sed -i 's/ansible --upgrade/ansible==2.6/g' bootstrap.sh
+         # HACK: bootstrap.sh assumes aws executable living in /usr/bin but it's not, let's symlink it
+         ln -s $(which aws) /usr/bin/aws
+         # HACK: bootstrap.sh expects boto package to be installed, let's install it
+         pip install --upgrade boto
+         # Ready to run bootstrap.sh
+         chmod 755 ./bootstrap.sh && ./bootstrap.sh -s ${Sudo} -e ${TagEnvironment}
+         # Upgrade latest packages
+         yum upgrade -y
+         # Cluster customisation
+         #aws s3 cp s3://cms-tech-s3/ECS-bootstrap/cms-ecs-bootstrap.sh ./
+         #chmod 755 ./cms-ecs-bootstrap.sh && ./cms-ecs-bootstrap.sh ${TagEnvironment}
+         # Bounce Instance
+         init 6
+  EcsInstanceAsg:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    DependsOn: ECSCluster
+    Properties:
+      VPCZoneIdentifier:
+        - !FindInMap [SubnetMap, !Ref SubnetType, a]
+        - !FindInMap [SubnetMap, !Ref SubnetType, b]
+        - !FindInMap [SubnetMap, !Ref SubnetType, c]
+      LaunchConfigurationName: !Ref EcsInstanceLc
+      MinSize: 1
+      MaxSize: !Ref AsgMaxSize
+      DesiredCapacity: !Ref AsgDesiredSize
+      MetricsCollection:
+      -
+        Granularity: "1Minute"
+      Tags:
+        -
+          Key: Name
+          Value: !Sub "ECS Instance - ${AWS::StackName}"
+          PropagateAtLaunch: 'true'
+        -
+          Key: Description
+          PropagateAtLaunch: 'true'
+          Value:
+            Ref: TagDescription
+        -
+          Key: environment
+          PropagateAtLaunch: 'true'
+          Value:
+            Ref: TagEnvironment
+        - Key: teamDL
+          PropagateAtLaunch: 'true'
+          Value:
+            Ref: TagTeamDL
+        - Key: systemCode
+          PropagateAtLaunch: 'true'
+          Value:
+            Ref: TagSystemCode
+Outputs:
+  EcsInstanceAsgName:
+    Description: Auto Scaling Group Name for ECS Instances
+    Value: !Ref EcsInstanceAsg
+  UsedByECSCreateCluster:
+    Description: Flag used by EC2 Container Service Create Cluster Wizard
+    Value: 'true'
