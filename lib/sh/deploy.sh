@@ -88,7 +88,8 @@ make_task_definition_with_splunk(){
 }
 
 register_task_definition() {
-    echo "Registering task definition ${task_def}"
+    #echo "Registering task definition ${task_def}"
+	echo "Registering task definition"
     if revision=$(aws ecs register-task-definition --container-definitions "$task_def" --family "${ARGS[--ecs_service]}" --output text --query 'taskDefinition.taskDefinitionArn'); then
         echo "Revision: $revision"
     else
