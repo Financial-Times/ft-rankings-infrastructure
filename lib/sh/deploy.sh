@@ -44,7 +44,6 @@ make_task_definition(){
 			"essential": true,
 			"memory": 256,
 			"cpu": 10,
-			"command": ["DB_HOST=%s","DB_USER=%s","DB_PASS=%s","DB_NAME=%s"],
 			"portMappings": [
 				{
 					"containerPort": 80
@@ -53,7 +52,8 @@ make_task_definition(){
 		}
 	]'
 
-	task_def=$(printf "$task_template" ${ARGS[--ecs_service]} ${ARGS[--aws_account_id]} ${ARGS[--aws_region]} ${ARGS[--image_name]} ${ARGS[--image_version]} ${ARGS[--db_host]} ${ARGS[--db_user]} ${ARGS[--db_pass]} ${ARGS[--db_name]})
+	#task_def=$(printf "$task_template" ${ARGS[--ecs_service]} ${ARGS[--aws_account_id]} ${ARGS[--aws_region]} ${ARGS[--image_name]} ${ARGS[--image_version]} ${ARGS[--db_host]} ${ARGS[--db_user]} ${ARGS[--db_pass]} ${ARGS[--db_name]})
+	task_def=$(printf "$task_template" ${ARGS[--ecs_service]} ${ARGS[--aws_account_id]} ${ARGS[--aws_region]} ${ARGS[--image_name]} ${ARGS[--image_version]})
 }
 
 make_task_definition_with_splunk(){
@@ -64,7 +64,6 @@ make_task_definition_with_splunk(){
 			"essential": true,
 			"memory": 256,
 			"cpu": 10,
-			"command": ["DB_HOST=%s","DB_USER=%s","DB_PASS=%s","DB_NAME=%s"],
 			"portMappings": [
 				{
 					"containerPort": 80
@@ -84,7 +83,8 @@ make_task_definition_with_splunk(){
 		}
 	]'
 
-	task_def=$(printf "$task_template" ${ARGS[--ecs_service]} ${ARGS[--aws_account_id]} ${ARGS[--aws_region]} ${ARGS[--image_name]} ${ARGS[--image_version]} ${ARGS[--db_host]} ${ARGS[--db_user]} ${ARGS[--db_pass]} ${ARGS[--db_name]} ${ARGS[--splunk_key]} ${ARGS[--splunk_index]} ${ARGS[--splunk_source]})
+	#task_def=$(printf "$task_template" ${ARGS[--ecs_service]} ${ARGS[--aws_account_id]} ${ARGS[--aws_region]} ${ARGS[--image_name]} ${ARGS[--image_version]} ${ARGS[--db_host]} ${ARGS[--db_user]} ${ARGS[--db_pass]} ${ARGS[--db_name]} ${ARGS[--splunk_key]} ${ARGS[--splunk_index]} ${ARGS[--splunk_source]})
+	task_def=$(printf "$task_template" ${ARGS[--ecs_service]} ${ARGS[--aws_account_id]} ${ARGS[--aws_region]} ${ARGS[--image_name]} ${ARGS[--image_version]} ${ARGS[--splunk_key]} ${ARGS[--splunk_index]} ${ARGS[--splunk_source]})
 }
 
 register_task_definition() {
