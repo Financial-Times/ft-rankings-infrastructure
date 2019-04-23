@@ -48,6 +48,13 @@ make_task_definition(){
 				{
 					"containerPort": 80
 				}
+			],
+			"mountPoints": [
+          		{
+					"sourceVolume": "sysconfig",
+					"containerPath": "/etc/sysconfig",
+					"readOnly": true
+				}
 			]
 		}
 	]'
@@ -69,6 +76,13 @@ make_task_definition_with_splunk(){
 					"containerPort": 80
 				}
 			],
+			"mountPoints": [
+          		{
+					"sourceVolume": "sysconfig",
+					"containerPath": "/etc/sysconfig",
+					"readOnly": true
+				}
+			],
 			"logConfiguration": {
 				"logDriver": "splunk",
 				"options": {
@@ -87,10 +101,22 @@ make_task_definition_with_splunk(){
 	task_def=$(printf "$task_template" ${ARGS[--ecs_service]} ${ARGS[--aws_account_id]} ${ARGS[--aws_region]} ${ARGS[--image_name]} ${ARGS[--image_version]} ${ARGS[--splunk_key]} ${ARGS[--splunk_index]} ${ARGS[--splunk_source]})
 }
 
+make_volume_definition() {
+  volume_template='[
+	{
+		"name": "sysconfig",
+		"host": {
+		"sourcePath": "/opt/rankings"
+		}
+	}
+  ]'
+  volume=$(printf "$volume_template")
+}
+
 register_task_definition() {
     #echo "Registering task definition ${task_def}"
 	echo "Registering task definition"
-    if revision=$(aws ecs register-task-definition --container-definitions "$task_def" --family "${ARGS[--ecs_service]}" --output text --query 'taskDefinition.taskDefinitionArn'); then
+    if revision=$(aws ecs register-task-definition --container-definitions "$task_def" --volumes "${volume}" --family "${ARGS[--ecs_service]}" --output text --query 'taskDefinition.taskDefinitionArn'); then
         echo "Revision: $revision"
     else
         echo "Failed to register task definition"
@@ -106,6 +132,7 @@ if [[ -z ${ARGS[--splunk_key]} ]]; then
 else
 	make_task_definition_with_splunk
 fi
+make_volume_definition
 register_task_definition
 
 deploy
