@@ -23,10 +23,9 @@ test -z ${ARGS[--aws_account_id]} && ARGS[--aws_account_id]="307921801440"
 test -z ${ARGS[--aws_region]} && ARGS[--aws_region]="eu-west-1"
 test -z ${ARGS[--splunk_index]} && ARGS[--splunk_index]="rankings"
 test -z ${ARGS[--splunk_source]} && ARGS[--splunk_source]="rankings"
-test -z ${ARGS[--db_host]} && ARGS[--db_host]="na"
-test -z ${ARGS[--db_user]} && ARGS[--db_user]="na"
-test -z ${ARGS[--db_pass]} && ARGS[--db_pass]="na"
-test -z ${ARGS[--db_name]} && ARGS[--db_name]="na"
+test -z ${ARGS[--memory]} && ARGS[--memory]="256"
+test -z ${ARGS[--memory_reservation]} && ARGS[--memory_reservation]="128"
+test -z ${ARGS[--cpu]} && ARGS[--cpu]="10"
 
 deploy() {
     if [[ $(aws ecs update-service --cluster ${ARGS[--ecs_cluster]} --service ${ARGS[--ecs_service]} --task-definition $revision \
@@ -42,8 +41,9 @@ make_task_definition(){
 			"name": "%s",
 			"image": "%s.dkr.ecr.%s.amazonaws.com/%s:%s",
 			"essential": true,
-			"memory": 256,
-			"cpu": 10,
+  			"memory": %s,
+  			"memoryReservation": %s,
+  			"cpu": %s,
 			"portMappings": [
 				{
 					"containerPort": 80
@@ -59,8 +59,14 @@ make_task_definition(){
 		}
 	]'
 
-	#task_def=$(printf "$task_template" ${ARGS[--ecs_service]} ${ARGS[--aws_account_id]} ${ARGS[--aws_region]} ${ARGS[--image_name]} ${ARGS[--image_version]} ${ARGS[--db_host]} ${ARGS[--db_user]} ${ARGS[--db_pass]} ${ARGS[--db_name]})
-	task_def=$(printf "$task_template" ${ARGS[--ecs_service]} ${ARGS[--aws_account_id]} ${ARGS[--aws_region]} ${ARGS[--image_name]} ${ARGS[--image_version]})
+	task_def=$(printf "$task_template" 	${ARGS[--ecs_service]} \
+										${ARGS[--aws_account_id]} \
+										${ARGS[--aws_region]} \
+										${ARGS[--image_name]} \
+										${ARGS[--image_version]} \
+										${ARGS[--memory]} \
+                      					${ARGS[--memory_reservation]} \
+                      					${ARGS[--cpu]} )
 }
 
 make_task_definition_with_splunk(){
@@ -97,8 +103,17 @@ make_task_definition_with_splunk(){
 		}
 	]'
 
-	#task_def=$(printf "$task_template" ${ARGS[--ecs_service]} ${ARGS[--aws_account_id]} ${ARGS[--aws_region]} ${ARGS[--image_name]} ${ARGS[--image_version]} ${ARGS[--db_host]} ${ARGS[--db_user]} ${ARGS[--db_pass]} ${ARGS[--db_name]} ${ARGS[--splunk_key]} ${ARGS[--splunk_index]} ${ARGS[--splunk_source]})
-	task_def=$(printf "$task_template" ${ARGS[--ecs_service]} ${ARGS[--aws_account_id]} ${ARGS[--aws_region]} ${ARGS[--image_name]} ${ARGS[--image_version]} ${ARGS[--splunk_key]} ${ARGS[--splunk_index]} ${ARGS[--splunk_source]})
+	task_def=$(printf "$task_template" 	${ARGS[--ecs_service]} \
+										${ARGS[--aws_account_id]} \
+										${ARGS[--aws_region]} \
+										${ARGS[--image_name]} \
+										${ARGS[--image_version]} \
+										${ARGS[--splunk_key]} \
+										${ARGS[--splunk_index]} \
+										${ARGS[--splunk_source]} \
+										${ARGS[--memory]} \
+                      					${ARGS[--memory_reservation]} \
+                      					${ARGS[--cpu]} )
 }
 
 make_volume_definition() {
