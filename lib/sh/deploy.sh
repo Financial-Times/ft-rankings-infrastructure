@@ -75,8 +75,9 @@ make_task_definition_with_splunk(){
 			"name": "%s",
 			"image": "%s.dkr.ecr.%s.amazonaws.com/%s:%s",
 			"essential": true,
-			"memory": 256,
-			"cpu": 10,
+  			"memory": %s,
+  			"memoryReservation": %s,
+  			"cpu": %s,
 			"portMappings": [
 				{
 					"containerPort": 80
@@ -108,12 +109,12 @@ make_task_definition_with_splunk(){
 										${ARGS[--aws_region]} \
 										${ARGS[--image_name]} \
 										${ARGS[--image_version]} \
-										${ARGS[--splunk_key]} \
-										${ARGS[--splunk_index]} \
-										${ARGS[--splunk_source]} \
 										${ARGS[--memory]} \
                       					${ARGS[--memory_reservation]} \
-                      					${ARGS[--cpu]} )
+                      					${ARGS[--cpu]} \
+										${ARGS[--splunk_key]} \
+										${ARGS[--splunk_index]} \
+										${ARGS[--splunk_source]} )
 }
 
 make_volume_definition() {
