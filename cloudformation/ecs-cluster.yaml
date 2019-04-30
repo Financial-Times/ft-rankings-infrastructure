@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
   ECS cluster for Rankings
-  Template updated: 15.4.2019
+  Template updated: 30.4.2019
 Parameters:
   EcsAmiId:
     Type: String
@@ -143,11 +143,9 @@ Resources:
          #!/bin/bash
          echo ECS_CLUSTER=${AWS::StackName} >> /etc/ecs/ecs.config
          export PATH=/usr/local/bin:$PATH
-         yum -y install jq nfs-utils autofs tcpdump cifs-utils lsof python27-pip rsync
-         pip install --upgrade awscli credstash
+         yum -y install jq tcpdump lsof python27-pip rsync acl nmap-ncat telnet mysql
+         pip install --upgrade awscli
          aws configure set default.region ${AWS::Region}
-         # HACK: Install package that provides setfacl
-         yum -y install acl nmap-ncat telnet mysql
          # Get bootstrap.sh
          aws s3 cp s3://ft-ce-repository/amazon-ftbase/releases/bootstrap.sh .
          # HACK: get ansible 2.6 due to ft-base not happy with 2.7+
@@ -161,8 +159,9 @@ Resources:
          # Upgrade latest packages
          yum upgrade -y
          # Cluster customisation
-         #aws s3 cp s3://cms-tech-s3/ECS-bootstrap/cms-ecs-bootstrap.sh ./
-         #chmod 755 ./cms-ecs-bootstrap.sh && ./cms-ecs-bootstrap.sh ${TagEnvironment}
+         mkdir -p /opt/rankings
+         curl --connect-timeout 3 -o /opt/rankings/bootstrap.sh -s https://raw.githubusercontent.com/Financial-Times/ft-rankings-infrastructure/master/lib/sh/bootstrap.sh
+         chmod 755 /opt/rankings/bootstrap.sh && /opt/rankings/bootstrap.sh
          # Bounce Instance
          init 6
   EcsInstanceAsg:
