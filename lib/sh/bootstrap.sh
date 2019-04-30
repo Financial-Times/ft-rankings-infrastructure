@@ -15,7 +15,7 @@ stop ecs && start ecs
 test -d ${DST_DIR} || mkdir -p ${DST_DIR}
 
 curl --connect-timeout 3 -o ${DST_DIR}/secretsreader.sh -s https://raw.githubusercontent.com/Financial-Times/ft-rankings-infrastructure/master/lib/sh/secretsreader.sh
-chmod 755 ${DST_DIR}/secretsreader.sh
+chmod 755 ${DST_DIR}/secretsreader.sh && ${DST_DIR}/secretsreader.sh
 (crontab -l ; echo "*/5 * * * *  ${DST_DIR}/secretsreader.sh") | crontab -
 
 
