@@ -125,7 +125,7 @@ Resources:
      - Key: stickiness.lb_cookie.duration_seconds
        Value: 86400
      VpcId: !Ref VpcId
-  ListenerRulePublic:
+  ListenerRulePublicHTTPS:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
       Actions:
@@ -136,11 +136,29 @@ Resources:
       - Field:  host-header
         Values:
         - "rankings-public-prod.ft.com"
+        - "rankings-public-dev.ft.com"
         - "rankings.ft.com"
         - "int.rankings.ft.com"
       ListenerArn:
         Ref: ListenerHTTPS
       Priority: 10
+  ListenerRulePublicHTTP:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+      - Type: forward
+        TargetGroupArn:
+          Ref: TargetGroupPublic
+      Conditions:
+      - Field:  host-header
+        Values:
+        - "rankings-public-prod.ft.com"
+        - "rankings-public-dev.ft.com"
+        - "rankings.ft.com"
+        - "int.rankings.ft.com"
+      ListenerArn:
+        Ref: ListenerHTTP
+      Priority: 10      
   TargetGroupSurvey:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
