@@ -21,14 +21,14 @@ chmod 755 ${DST_DIR}/secretsreader.sh && ${DST_DIR}/secretsreader.sh
 # Loading the Crontab for Admin tasks
 
 #updaterssfeed
-(crontab -l; echo "*/5 * * * * docker run -it 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:130 bash -c 'cd lib/crn && source /etc/ft-rankings.conf && php updaterssfeed'") | crontab -
+(crontab -l; echo "*/10 * * * 1-5 docker run -it 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:194 bash -c 'cd lib/crn && source /etc/ft-profile.conf && php updaterssfeeds'") | crontab -
 
 #applyscheduledtasks
-(crontab -l; echo "*/5 * * * * docker run -it 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:130 bash -c 'cd lib/crn && source /etc/ft-rankings.conf && php applyschedukedtasks'") | crontab -
+(crontab -l; echo "*/10 * * * 1-5 docker run -it 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:194 bash -c 'cd lib/crn && source /etc/ft-profile.conf && php applyscheduledtasks'") | crontab -
 
 #updatefxrates
-(crontab -l; echo "*/5 * * * * docker run -it 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:130 bash -c 'cd lib/crn && source /etc/ft-rankings.conf && php updatefxrates'") | crontab -
+(crontab -l; echo "*/10 * * * 1-5 docker run -it 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:194 bash -c 'cd lib/crn && source /etc/ft-profile.conf && php updatefxrates.php'") | crontab -
 
 #updateicalfeeds
-(crontab -l; echo "*/5 * * * * docker run -it 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:130 bash -c 'cd lib/crn && source /etc/ft-rankings.conf && php updateicalfeeds'") | crontab -
+(crontab -l; echo "*/10 * * * 1-5 docker run -it 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:194 bash -c 'cd lib/crn && source /etc/ft-profile.conf && php updateicalfeeds'") | crontab -
 
