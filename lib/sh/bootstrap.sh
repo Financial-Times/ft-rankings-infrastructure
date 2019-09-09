@@ -18,6 +18,17 @@ curl --connect-timeout 3 -o ${DST_DIR}/secretsreader.sh -s https://raw.githubuse
 chmod 755 ${DST_DIR}/secretsreader.sh && ${DST_DIR}/secretsreader.sh
 (crontab -l ; echo "*/5 * * * *  ${DST_DIR}/secretsreader.sh") | crontab -
 
+# Loading the Crontab for Admin tasks
 
+#updaterssfeed
+(crontab -l; echo "*/5 * * * * docker run -it 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:130 bash -c 'cd lib/crn && source /etc/ft-rankings.conf && php updaterssfeed'") | crontab -
 
+#applyscheduledtasks
+(crontab -l; echo "*/5 * * * * docker run -it 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:130 bash -c 'cd lib/crn && source /etc/ft-rankings.conf && php applyschedukedtasks'") | crontab -
+
+#updatefxrates
+(crontab -l; echo "*/5 * * * * docker run -it 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:130 bash -c 'cd lib/crn && source /etc/ft-rankings.conf && php updatefxrates'") | crontab -
+
+#updateicalfeeds
+(crontab -l; echo "*/5 * * * * docker run -it 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:130 bash -c 'cd lib/crn && source /etc/ft-rankings.conf && php updateicalfeeds'") | crontab -
 
