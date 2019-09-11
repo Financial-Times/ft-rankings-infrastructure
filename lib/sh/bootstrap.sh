@@ -21,14 +21,14 @@ chmod 755 ${DST_DIR}/secretsreader.sh && ${DST_DIR}/secretsreader.sh
 # Loading the Crontab for Admin tasks
 
 #updaterssfeed
-(crontab -l; echo "*/10 * * * 1-5 docker run -it 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:194 bash -c 'cd lib/crn && source /etc/ft-profile.conf && php updaterssfeeds'") | crontab -
+(crontab -l; echo "1 * * * 1-5 /usr/bin/logger updaterssfeeds started ; /usr/bin/docker --debug run -t 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:$(/usr/bin/docker images | grep ft-rankings-admin | awk '{print $2}') bash -c 'cd lib/crn && source /etc/ft-profile.conf && php updaterssfeeds' ; /usr/bin/logger updaterssfeeds finished") | crontab -
 
 #applyscheduledtasks
-(crontab -l; echo "*/10 * * * 1-5 docker run -it 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:194 bash -c 'cd lib/crn && source /etc/ft-profile.conf && php applyscheduledtasks'") | crontab -
+(crontab -l; echo "2 * * * 1-5 /usr/bin/logger applyscheduledtasks starter ; /usr/bin/docker --debug run -t 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:$(/usr/bin/docker images | grep ft-rankings-admin | awk '{print $2}') bash -c 'cd lib/crn && source /etc/ft-profile.conf && php applyscheduledtasks' ; /usr/bin/logger applyscheduledtasks finished") | crontab -
 
 #updatefxrates
-(crontab -l; echo "*/10 * * * 1-5 docker run -it 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:194 bash -c 'cd lib/crn && source /etc/ft-profile.conf && php updatefxrates.php'") | crontab -
+(crontab -l; echo "3 * * * 1-5 /usr/bin/logger updatefxrates.php started ; /usr/bin/docker --debug run -t 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:$(/usr/bin/docker images | grep ft-rankings-admin | awk '{print $2}') bash -c 'cd lib/crn && source /etc/ft-profile.conf && php updatefxrates.php' ; /usr/bin/logger updatefxrates.php finished") | crontab -
 
 #updateicalfeeds
-(crontab -l; echo "*/10 * * * 1-5 docker run -it 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:194 bash -c 'cd lib/crn && source /etc/ft-profile.conf && php updateicalfeeds'") | crontab -
+(crontab -l; echo "4 * * * 1-5 /usr/bin/logger updateicalfeeds started ; /usr/bin/docker --debug run -t 307921801440.dkr.ecr.eu-west-1.amazonaws.com/ft-rankings-admin:$(/usr/bin/docker images | grep ft-rankings-admin | awk '{print $2}') bash -c 'cd lib/crn && source /etc/ft-profile.conf && php updateicalfeeds' ; /usr/bin/logger updateicalfeeds finished") | crontab -
 
