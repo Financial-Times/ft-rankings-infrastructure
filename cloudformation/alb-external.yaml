@@ -141,7 +141,7 @@ Resources:
         - "int.rankings.ft.com"
       ListenerArn:
         Ref: ListenerHTTPS
-      Priority: 10
+      Priority: 12
   ListenerRulePublicHTTP:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
@@ -158,7 +158,7 @@ Resources:
         - "int.rankings.ft.com"
       ListenerArn:
         Ref: ListenerHTTP
-      Priority: 10      
+      Priority: 11      
   TargetGroupSurvey:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
@@ -198,6 +198,23 @@ Resources:
       ListenerArn:
         Ref: ListenerHTTPS
       Priority: 20
+  ListenerRuleSurveyHTTP:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+      - Type: forward
+        TargetGroupArn:
+          Ref: TargetGroupSurvey
+      Conditions:
+      - Field:  host-header
+        Values:
+        - "rankings-survey-prod.ft.com"
+        - "rankings-survey-dev.ft.com"
+        - "busedsurveys.ft.com"
+        - "busedsurveys-dev.ft.com"
+      ListenerArn:
+        Ref: ListenerHTTP
+      Priority: 21
   TargetGroupAdmin:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
@@ -236,7 +253,24 @@ Resources:
         - "rankingsadmin.ft.com"
       ListenerArn:
         Ref: ListenerHTTPS
-      Priority: 30       
+      Priority: 30
+  ListenerRuleAdminHTTP:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+      - Type: forward
+        TargetGroupArn:
+          Ref: TargetGroupAdmin
+      Conditions:
+      - Field:  host-header
+        Values:
+        - "rankings-admin-prod.ft.com"
+        - "rankings-admin-dev.ft.com"
+        - "rankingsadmin-dev.ft.com"
+        - "rankingsadmin.ft.com"
+      ListenerArn:
+        Ref: ListenerHTTP
+      Priority: 32
 Outputs:
   LoadBalancerDNSName:
     Description: Load Balancer DNS Name

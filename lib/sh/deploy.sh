@@ -23,9 +23,9 @@ test -z ${ARGS[--aws_account_id]} && ARGS[--aws_account_id]="307921801440"
 test -z ${ARGS[--aws_region]} && ARGS[--aws_region]="eu-west-1"
 test -z ${ARGS[--splunk_index]} && ARGS[--splunk_index]="rankings"
 test -z ${ARGS[--splunk_source]} && ARGS[--splunk_source]="rankings"
-test -z ${ARGS[--memory]} && ARGS[--memory]="256"
-test -z ${ARGS[--memory_reservation]} && ARGS[--memory_reservation]="128"
-test -z ${ARGS[--cpu]} && ARGS[--cpu]="10"
+test -z ${ARGS[--memory]} && ARGS[--memory]="512"
+test -z ${ARGS[--memory_reservation]} && ARGS[--memory_reservation]="256"
+test -z ${ARGS[--cpu]} && ARGS[--cpu]="512"
 
 deploy() {
     if [[ $(aws ecs update-service --cluster ${ARGS[--ecs_cluster]} --service ${ARGS[--ecs_service]} --task-definition $revision \
