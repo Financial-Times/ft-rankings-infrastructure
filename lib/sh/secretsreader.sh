@@ -45,7 +45,7 @@ echo -n $(aws secretsmanager get-secret-value --secret-id ${SERCRETS_MAP[${ECS_C
 
 test -d ${DST_DIR} || mkdir -p ${DST_DIR}
 
-for each in mysql-app-host mysql-app-name mysql-app-password mysql-app-user; do
+for each in mysql-app-host mysql-app-host-read mysql-app-name mysql-app-password mysql-app-user; do
     if [[ "$(wc -c < ${SRC_DIR}/${each})" -gt "0" ]]; then
         info "Updating secrets for ${each}"
         cat ${SRC_DIR}/${each} > ${DST_DIR}/${each}
