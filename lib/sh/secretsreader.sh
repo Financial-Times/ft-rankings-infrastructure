@@ -40,6 +40,7 @@ test -z ${SERCRETS_MAP[${ECS_CLUSTER}]} && errorAndExit "Failed to find secret-i
 echo -n $(aws secretsmanager get-secret-value --secret-id ${SERCRETS_MAP[${ECS_CLUSTER}]} --query SecretString | jq -r '.' | jq -r .username) > ${SRC_DIR}/mysql-app-user
 echo -n $(aws secretsmanager get-secret-value --secret-id ${SERCRETS_MAP[${ECS_CLUSTER}]} --query SecretString | jq -r '.' | jq -r .password) > ${SRC_DIR}/mysql-app-password
 echo -n $(aws secretsmanager get-secret-value --secret-id ${SERCRETS_MAP[${ECS_CLUSTER}]} --query SecretString | jq -r '.' | jq -r .host) > ${SRC_DIR}/mysql-app-host
+echo -n $(aws secretsmanager get-secret-value --secret-id ${SERCRETS_MAP[${ECS_CLUSTER}]} --query SecretString | jq -r '.' | jq -r .host_read) > ${SRC_DIR}/mysql-app-host-read
 echo -n $(aws secretsmanager get-secret-value --secret-id ${SERCRETS_MAP[${ECS_CLUSTER}]} --query SecretString | jq -r '.' | jq -r .name) > ${SRC_DIR}/mysql-app-name
 
 test -d ${DST_DIR} || mkdir -p ${DST_DIR}
