@@ -211,7 +211,7 @@
        - Key: stickiness.lb_cookie.duration_seconds
          Value: 86400
        VpcId: !Ref VpcId
-    ListenerRuleSurvey:
+    ListenerRuleSurveyHTTPS:
       Type: AWS::ElasticLoadBalancingV2::ListenerRule
       Properties:
         Actions:
@@ -227,7 +227,7 @@
           - "busedsurveys-dev.ft.com"
         ListenerArn:
           Ref: ListenerHTTPS
-        Priority: 20
+        Priority: 22
     ListenerRuleSurveyHTTP:
       Type: AWS::ElasticLoadBalancingV2::ListenerRule
       Properties:
@@ -244,7 +244,7 @@
           - "busedsurveys-dev.ft.com"
         ListenerArn:
           Ref: ListenerHTTP
-        Priority: 21
+        Priority: 23
     TargetGroupAdmin:
       Type: AWS::ElasticLoadBalancingV2::TargetGroup
       Properties:
@@ -267,27 +267,10 @@
        - Key: stickiness.lb_cookie.duration_seconds
          Value: 86400
        VpcId: !Ref VpcId
-    ListenerRuleAdmin:
+    ListenerRuleAdminHTTPS:
       Type: AWS::ElasticLoadBalancingV2::ListenerRule
       Properties:
         Actions:
-        - Type: forward
-          TargetGroupArn:
-            Ref: TargetGroupAdmin
-        Conditions:
-        - Field:  host-header
-          Values:
-          - "rankings-admin-prod.ft.com"
-          - "rankings-admin-dev.ft.com"
-          - "rankingsadmin-dev.ft.com"
-          - "rankingsadmin.ft.com"
-        ListenerArn:
-          Ref: ListenerHTTPS
-        Priority: 30
-    ListenerRuleAdminHTTP:
-      Type: AWS::ElasticLoadBalancingV2::ListenerRule
-      Properties:
-        DefaultActions:
           - Type: authenticate-oidc
             AuthenticateOidcConfig:
               AuthorizationEndpoint: !Join ["", [!FindInMap ["Okta", "Issuer", !Ref OktaEnvironment], /v1/authorize]]
@@ -304,11 +287,6 @@
           - Type: forward
             TargetGroupArn: !Ref TargetGroupAdmin
             Order: 2
-
-        #      Actions:
-  #      - Type: forward
-  #        TargetGroupArn:
-  #          Ref: TargetGroupAdmin
         Conditions:
         - Field:  host-header
           Values:
@@ -317,8 +295,8 @@
           - "rankingsadmin-dev.ft.com"
           - "rankingsadmin.ft.com"
         ListenerArn:
-          Ref: ListenerHTTP
-        Priority: 32
+          Ref: ListenerHTTPS
+        Priority: 34
   Outputs:
     LoadBalancerDNSName:
       Description: Load Balancer DNS Name
