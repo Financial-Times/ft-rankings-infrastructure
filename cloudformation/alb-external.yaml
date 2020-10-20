@@ -1,277 +1,303 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Description: >
-  External ALB for Rankings
-Parameters:
-  SecurityGroupIds:
-    Type: CommaDelimitedList
-    Description: Security Groups to attach load balancer
-    Default: sg-e1875c99,sg-79ba6101
-  SubnetIds:
-    Type: CommaDelimitedList
-    Description: Public subnets to attach load balancer
-    Default: subnet-cbbc0d82,subnet-3f3fcb64,subnet-a467cfc3
-  VpcId:
-    Type: String
-    Description: >
-      Optional - Specifies the ID of an existing VPC in which to launch
-      your container instances.
-    Default: vpc-729f2815
-    AllowedPattern: "^(?:vpc-[0-9a-f]{8}|)$"
-    ConstraintDescription: >
-      VPC Id must begin with 'vpc-'
-  TagDescription:
-    Description: Tag detail for the Description
-    Type: String
-    Default: External ALB for Rankings
-  TagTeamDL:
-    Description: Tag detail for the TeamDL
-    ConstraintDescription: There must be a valid email address for the TeamDL Topic
-    Type: String
-    AllowedPattern: ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$
-    Default: rankings@ft.com
-  TagSystemCode:
-      Description: SystemCode
+  AWSTemplateFormatVersion: '2010-09-09'
+  Description: >
+    External ALB for Rankings
+  Parameters:
+    SecurityGroupIds:
+      Type: CommaDelimitedList
+      Description: Security Groups to attach load balancer
+      Default: sg-e1875c99,sg-79ba6101
+    SubnetIds:
+      Type: CommaDelimitedList
+      Description: Public subnets to attach load balancer
+      Default: subnet-cbbc0d82,subnet-3f3fcb64,subnet-a467cfc3
+    VpcId:
       Type: String
-      Default: rankings-web
-  TagEnvironment:
-    Description: Tag detail for the Environment
-    Type: String
-    Default: int
-    AllowedValues:
-      - 'd'
-      - 't'
-      - 'p'
-      - 'int'
-Mappings:
-  EnvMap:
-    d:
-      env: "dev"
-    t:
-      env: "test"
-    p:
-      env: "prod"
-    int:
-      env: "int"
-Resources:
-  ApplicationLoadBalancer:
-    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-    Properties:
-     Name: !Sub "${AWS::StackName}"
-     Type: application
-     Scheme: internet-facing
-     Subnets: !Ref SubnetIds
-     SecurityGroups: !Ref SecurityGroupIds
-     Tags:
-       -
-         Key: Name
-         Value: !Sub "${AWS::StackName}"
-       -
-         Key: Description
-         Value:
-           Ref: TagDescription
-       -
-         Key: environment
-         Value:
-           Ref: TagEnvironment
-       - Key: teamDL
-         Value:
-           Ref: TagTeamDL
-       - Key: systemCode
-         Value:
-           Ref: TagSystemCode
-  ListenerHTTP:
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    Properties:
-      DefaultActions:
-      - Type: forward
-        TargetGroupArn:
-          Ref: TargetGroupPublic
-      LoadBalancerArn:
-        Ref: ApplicationLoadBalancer
-      Port: 80
-      Protocol: HTTP
-  ListenerHTTPS:
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    Properties:
-      DefaultActions:
-      - Type: forward
-        TargetGroupArn:
-          Ref: TargetGroupPublic
-      LoadBalancerArn:
-        Ref: ApplicationLoadBalancer
-      Port: 443
-      Protocol: HTTPS
-      Certificates:
-        - CertificateArn: arn:aws:acm:eu-west-1:307921801440:certificate/00b98d3d-2c61-4a52-a28c-5bbb79c04011
-  TargetGroupPublic:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-     Name: !Sub "${AWS::StackName}-public"
-     Port: 80
-     Protocol: HTTP
-     HealthCheckPath: /__health
-     HealthCheckProtocol: HTTP
-     HealthCheckIntervalSeconds: 10
-     HealthCheckTimeoutSeconds: 5
-     HealthyThresholdCount: 2
-     UnhealthyThresholdCount: 2
-     Matcher:
-       HttpCode: '200'
-     TargetGroupAttributes:
-     - Key: deregistration_delay.timeout_seconds
-       Value: '60'
-     - Key: stickiness.enabled
-       Value: true
-     - Key: stickiness.lb_cookie.duration_seconds
-       Value: 86400
-     VpcId: !Ref VpcId
-  ListenerRulePublicHTTPS:
-    Type: AWS::ElasticLoadBalancingV2::ListenerRule
-    Properties:
-      Actions:
-      - Type: forward
-        TargetGroupArn:
-          Ref: TargetGroupPublic
-      Conditions:
-      - Field:  host-header
-        Values:
-        - "rankings-public-prod.ft.com"
-        - "rankings-public-dev.ft.com"
-        - "rankings.ft.com"
-        - "int.rankings.ft.com"
-      ListenerArn:
-        Ref: ListenerHTTPS
-      Priority: 12
-  ListenerRulePublicHTTP:
-    Type: AWS::ElasticLoadBalancingV2::ListenerRule
-    Properties:
-      Actions:
-      - Type: forward
-        TargetGroupArn:
-          Ref: TargetGroupPublic
-      Conditions:
-      - Field:  host-header
-        Values:
-        - "rankings-public-prod.ft.com"
-        - "rankings-public-dev.ft.com"
-        - "rankings.ft.com"
-        - "int.rankings.ft.com"
-      ListenerArn:
-        Ref: ListenerHTTP
-      Priority: 11      
-  TargetGroupSurvey:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-     Name: !Sub "${AWS::StackName}-survey"
-     Port: 80
-     Protocol: HTTP
-     HealthCheckPath: /__health
-     HealthCheckProtocol: HTTP
-     HealthCheckIntervalSeconds: 10
-     HealthCheckTimeoutSeconds: 5
-     HealthyThresholdCount: 2
-     UnhealthyThresholdCount: 2
-     Matcher:
-       HttpCode: '200'
-     TargetGroupAttributes:
-     - Key: deregistration_delay.timeout_seconds
-       Value: '60'
-     - Key: stickiness.enabled
-       Value: true
-     - Key: stickiness.lb_cookie.duration_seconds
-       Value: 86400
-     VpcId: !Ref VpcId
-  ListenerRuleSurvey:
-    Type: AWS::ElasticLoadBalancingV2::ListenerRule
-    Properties:
-      Actions:
-      - Type: forward
-        TargetGroupArn:
-          Ref: TargetGroupSurvey
-      Conditions:
-      - Field:  host-header
-        Values:
-        - "rankings-survey-prod.ft.com"
-        - "rankings-survey-dev.ft.com"
-        - "busedsurveys.ft.com"
-        - "busedsurveys-dev.ft.com"
-      ListenerArn:
-        Ref: ListenerHTTPS
-      Priority: 20
-  ListenerRuleSurveyHTTP:
-    Type: AWS::ElasticLoadBalancingV2::ListenerRule
-    Properties:
-      Actions:
-      - Type: forward
-        TargetGroupArn:
-          Ref: TargetGroupSurvey
-      Conditions:
-      - Field:  host-header
-        Values:
-        - "rankings-survey-prod.ft.com"
-        - "rankings-survey-dev.ft.com"
-        - "busedsurveys.ft.com"
-        - "busedsurveys-dev.ft.com"
-      ListenerArn:
-        Ref: ListenerHTTP
-      Priority: 21
-  TargetGroupAdmin:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-     Name: !Sub "${AWS::StackName}-admin"
-     Port: 80
-     Protocol: HTTP
-     HealthCheckPath: /__health
-     HealthCheckProtocol: HTTP
-     HealthCheckIntervalSeconds: 10
-     HealthCheckTimeoutSeconds: 5
-     HealthyThresholdCount: 2
-     UnhealthyThresholdCount: 2
-     Matcher:
-       HttpCode: '200'
-     TargetGroupAttributes:
-     - Key: deregistration_delay.timeout_seconds
-       Value: '60'
-     - Key: stickiness.enabled
-       Value: true
-     - Key: stickiness.lb_cookie.duration_seconds
-       Value: 86400
-     VpcId: !Ref VpcId
-  ListenerRuleAdmin:
-    Type: AWS::ElasticLoadBalancingV2::ListenerRule
-    Properties:
-      Actions:
-      - Type: forward
-        TargetGroupArn:
-          Ref: TargetGroupAdmin
-      Conditions:
-      - Field:  host-header
-        Values:
-        - "rankings-admin-prod.ft.com"
-        - "rankings-admin-dev.ft.com"
-        - "rankingsadmin-dev.ft.com"
-        - "rankingsadmin.ft.com"
-      ListenerArn:
-        Ref: ListenerHTTPS
-      Priority: 30
-  ListenerRuleAdminHTTP:
-    Type: AWS::ElasticLoadBalancingV2::ListenerRule
-    Properties:
-      Actions:
-      - Type: forward
-        TargetGroupArn:
-          Ref: TargetGroupAdmin
-      Conditions:
-      - Field:  host-header
-        Values:
-        - "rankings-admin-prod.ft.com"
-        - "rankings-admin-dev.ft.com"
-        - "rankingsadmin-dev.ft.com"
-        - "rankingsadmin.ft.com"
-      ListenerArn:
-        Ref: ListenerHTTP
-      Priority: 32
-Outputs:
-  LoadBalancerDNSName:
-    Description: Load Balancer DNS Name
-    Value: !GetAtt ApplicationLoadBalancer.DNSName
+      Description: >
+        Optional - Specifies the ID of an existing VPC in which to launch
+        your container instances.
+      Default: vpc-729f2815
+      AllowedPattern: "^(?:vpc-[0-9a-f]{8}|)$"
+      ConstraintDescription: >
+        VPC Id must begin with 'vpc-'
+    TagDescription:
+      Description: Tag detail for the Description
+      Type: String
+      Default: External ALB for Rankings
+    TagTeamDL:
+      Description: Tag detail for the TeamDL
+      ConstraintDescription: There must be a valid email address for the TeamDL Topic
+      Type: String
+      AllowedPattern: ^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$
+      Default: rankings@ft.com
+    TagSystemCode:
+        Description: SystemCode
+        Type: String
+        Default: rankings-web
+    TagEnvironment:
+      Description: Tag detail for the Environment
+      Type: String
+      Default: int
+      AllowedValues:
+        - 'd'
+        - 't'
+        - 'p'
+        - 'int'
+    OktaOauthScopes:
+      Type: String
+      Description: Select OAuth scopes
+      AllowedValues:
+        - openid profile offline_access
+        - openid profile offline_access email
+        - openid profile offline_access groups
+        - openid profile offline_access email groups
+    OktaEnvironment:
+      Type: String
+      Description: Select which okta environment you want the application load balancer to integrate with.
+      Default: FtTest
+      AllowedValues:
+        - FtTest
+        - FtProd
+    OktaSecretsManagerSecretName:
+      Type: String
+      Description: Specify the name of the secrets manager secret  that holds the client id and client secret keys.
+    OktaSecretsManagerClientIDSecretKey:
+      Type: String
+      Description: Specify the name of the secrets manager secret key that holds the client id value.
+      Default: client_id
+    OktaSecretsManagerClientSecretSecretKey:
+      Type: String
+      Description: Specify the name of the secrets manager secret key that holds the client secret value.
+      Default: client_secret
+  Mappings:
+    EnvMap:
+      d:
+        env: "dev"
+      t:
+        env: "test"
+      p:
+        env: "prod"
+      int:
+        env: "int"
+    Okta:
+      Issuer:
+        FtTest: https://ft-test.okta.com/oauth2/aus1kd29jg5LHxiFu357
+        FtProd: https://ft.okta.com/oauth2/aus1kd9vpcssdNhdH357
+  Resources:
+    ApplicationLoadBalancer:
+      Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+      Properties:
+       Name: !Sub "${AWS::StackName}"
+       Type: application
+       Scheme: internet-facing
+       Subnets: !Ref SubnetIds
+       SecurityGroups: !Ref SecurityGroupIds
+       Tags:
+         -
+           Key: Name
+           Value: !Sub "${AWS::StackName}"
+         -
+           Key: Description
+           Value:
+             Ref: TagDescription
+         -
+           Key: environment
+           Value:
+             Ref: TagEnvironment
+         - Key: teamDL
+           Value:
+             Ref: TagTeamDL
+         - Key: systemCode
+           Value:
+             Ref: TagSystemCode
+    ListenerHTTP:
+      Type: AWS::ElasticLoadBalancingV2::Listener
+      Properties:
+        DefaultActions:
+        - Type: forward
+          TargetGroupArn:
+            Ref: TargetGroupPublic
+        LoadBalancerArn:
+          Ref: ApplicationLoadBalancer
+        Port: 80
+        Protocol: HTTP
+    ListenerHTTPS:
+      Type: AWS::ElasticLoadBalancingV2::Listener
+      Properties:
+        DefaultActions:
+        - Type: forward
+          TargetGroupArn:
+            Ref: TargetGroupPublic
+        LoadBalancerArn:
+          Ref: ApplicationLoadBalancer
+        Port: 443
+        Protocol: HTTPS
+        Certificates:
+          - CertificateArn: arn:aws:acm:eu-west-1:307921801440:certificate/00b98d3d-2c61-4a52-a28c-5bbb79c04011
+    TargetGroupPublic:
+      Type: AWS::ElasticLoadBalancingV2::TargetGroup
+      Properties:
+       Name: !Sub "${AWS::StackName}-public"
+       Port: 80
+       Protocol: HTTP
+       HealthCheckPath: /__health
+       HealthCheckProtocol: HTTP
+       HealthCheckIntervalSeconds: 10
+       HealthCheckTimeoutSeconds: 5
+       HealthyThresholdCount: 2
+       UnhealthyThresholdCount: 2
+       Matcher:
+         HttpCode: '200'
+       TargetGroupAttributes:
+       - Key: deregistration_delay.timeout_seconds
+         Value: '60'
+       - Key: stickiness.enabled
+         Value: true
+       - Key: stickiness.lb_cookie.duration_seconds
+         Value: 86400
+       VpcId: !Ref VpcId
+    ListenerRulePublicHTTPS:
+      Type: AWS::ElasticLoadBalancingV2::ListenerRule
+      Properties:
+        Actions:
+        - Type: forward
+          TargetGroupArn:
+            Ref: TargetGroupPublic
+        Conditions:
+        - Field:  host-header
+          Values:
+          - "rankings-public-prod.ft.com"
+          - "rankings-public-dev.ft.com"
+          - "rankings.ft.com"
+          - "int.rankings.ft.com"
+        ListenerArn:
+          Ref: ListenerHTTPS
+        Priority: 12
+    ListenerRulePublicHTTP:
+      Type: AWS::ElasticLoadBalancingV2::ListenerRule
+      Properties:
+        Actions:
+        - Type: forward
+          TargetGroupArn:
+            Ref: TargetGroupPublic
+        Conditions:
+        - Field:  host-header
+          Values:
+          - "rankings-public-prod.ft.com"
+          - "rankings-public-dev.ft.com"
+          - "rankings.ft.com"
+          - "int.rankings.ft.com"
+        ListenerArn:
+          Ref: ListenerHTTP
+        Priority: 11
+    TargetGroupSurvey:
+      Type: AWS::ElasticLoadBalancingV2::TargetGroup
+      Properties:
+       Name: !Sub "${AWS::StackName}-survey"
+       Port: 80
+       Protocol: HTTP
+       HealthCheckPath: /__health
+       HealthCheckProtocol: HTTP
+       HealthCheckIntervalSeconds: 10
+       HealthCheckTimeoutSeconds: 5
+       HealthyThresholdCount: 2
+       UnhealthyThresholdCount: 2
+       Matcher:
+         HttpCode: '200'
+       TargetGroupAttributes:
+       - Key: deregistration_delay.timeout_seconds
+         Value: '60'
+       - Key: stickiness.enabled
+         Value: true
+       - Key: stickiness.lb_cookie.duration_seconds
+         Value: 86400
+       VpcId: !Ref VpcId
+    ListenerRuleSurveyHTTPS:
+      Type: AWS::ElasticLoadBalancingV2::ListenerRule
+      Properties:
+        Actions:
+        - Type: forward
+          TargetGroupArn:
+            Ref: TargetGroupSurvey
+        Conditions:
+        - Field:  host-header
+          Values:
+          - "rankings-survey-prod.ft.com"
+          - "rankings-survey-dev.ft.com"
+          - "busedsurveys.ft.com"
+          - "busedsurveys-dev.ft.com"
+        ListenerArn:
+          Ref: ListenerHTTPS
+        Priority: 22
+    ListenerRuleSurveyHTTP:
+      Type: AWS::ElasticLoadBalancingV2::ListenerRule
+      Properties:
+        Actions:
+        - Type: forward
+          TargetGroupArn:
+            Ref: TargetGroupSurvey
+        Conditions:
+        - Field:  host-header
+          Values:
+          - "rankings-survey-prod.ft.com"
+          - "rankings-survey-dev.ft.com"
+          - "busedsurveys.ft.com"
+          - "busedsurveys-dev.ft.com"
+        ListenerArn:
+          Ref: ListenerHTTP
+        Priority: 23
+    TargetGroupAdmin:
+      Type: AWS::ElasticLoadBalancingV2::TargetGroup
+      Properties:
+       Name: !Sub "${AWS::StackName}-admin"
+       Port: 80
+       Protocol: HTTP
+       HealthCheckPath: /__health
+       HealthCheckProtocol: HTTP
+       HealthCheckIntervalSeconds: 10
+       HealthCheckTimeoutSeconds: 5
+       HealthyThresholdCount: 2
+       UnhealthyThresholdCount: 2
+       Matcher:
+         HttpCode: '200'
+       TargetGroupAttributes:
+       - Key: deregistration_delay.timeout_seconds
+         Value: '60'
+       - Key: stickiness.enabled
+         Value: true
+       - Key: stickiness.lb_cookie.duration_seconds
+         Value: 86400
+       VpcId: !Ref VpcId
+    ListenerRuleAdminHTTPS:
+      Type: AWS::ElasticLoadBalancingV2::ListenerRule
+      Properties:
+        Actions:
+          - Type: authenticate-oidc
+            AuthenticateOidcConfig:
+              AuthorizationEndpoint: !Join ["", [!FindInMap ["Okta", "Issuer", !Ref OktaEnvironment], /v1/authorize]]
+              ClientId: !Join ["", ['{{resolve:secretsmanager:', !Ref OktaSecretsManagerSecretName, ':SecretString:', !Ref OktaSecretsManagerClientIDSecretKey, '}}']]
+              ClientSecret: !Join ["", ['{{resolve:secretsmanager:', !Ref OktaSecretsManagerSecretName, ':SecretString:', !Ref OktaSecretsManagerClientSecretSecretKey, '}}']]
+              Issuer: !FindInMap ["Okta", "Issuer", !Ref OktaEnvironment]
+              OnUnauthenticatedRequest: authenticate
+              Scope: !Ref OktaOauthScopes
+              SessionCookieName: AWSELBAuthSessionCookie
+              SessionTimeout: 43200
+              TokenEndpoint: !Join ["", [!FindInMap ["Okta", "Issuer", !Ref OktaEnvironment], /v1/token]]
+              UserInfoEndpoint: !Join ["", [!FindInMap ["Okta", "Issuer", !Ref OktaEnvironment], /v1/userinfo]]
+            Order: 1
+          - Type: forward
+            TargetGroupArn: !Ref TargetGroupAdmin
+            Order: 2
+        Conditions:
+        - Field:  host-header
+          Values:
+          - "rankings-admin-prod.ft.com"
+          - "rankings-admin-dev.ft.com"
+          - "rankingsadmin-dev.ft.com"
+          - "rankingsadmin.ft.com"
+        ListenerArn:
+          Ref: ListenerHTTPS
+        Priority: 34
+  Outputs:
+    LoadBalancerDNSName:
+      Description: Load Balancer DNS Name
+      Value: !GetAtt ApplicationLoadBalancer.DNSName
